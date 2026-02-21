@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { GatewayAnalytics, GatewayConfig, RequestLog, ApiKey } from '../types';
 
@@ -35,7 +35,6 @@ export function GatewayDashboard({ apiBaseUrl, apiKey }: GatewayDashboardProps) 
   const [rpmHistory, setRpmHistory] = useState<{ time: string; rpm: number }[]>([]);
   const { data: config } = useGatewayApi<GatewayConfig>(apiBaseUrl, '/gateway/config', apiKey);
   const { data: logsData } = useGatewayApi<LogsResponse>(apiBaseUrl, '/gateway/logs?limit=20', apiKey);
-  const eventSourceRef = useRef<EventSource | null>(null);
   const [keyName, setKeyName] = useState('');
   const [keyTier, setKeyTier] = useState('free');
   const [createdKeys, setCreatedKeys] = useState<CreatedKey[]>([]);
@@ -92,25 +91,54 @@ export function GatewayDashboard({ apiBaseUrl, apiKey }: GatewayDashboardProps) 
   };
 
   useEffect(() => {
-    const es = new EventSource(`${apiBaseUrl}/gateway/analytics/live`);
-    eventSourceRef.current = es;
+    let cancelled = false;
 
-    es.onmessage = (event) => {
-      const data: GatewayAnalytics = JSON.parse(event.data);
-      setAnalytics(data);
-      setRpmHistory(prev => {
-        const next = [
-          ...prev,
-          { time: new Date().toLocaleTimeString(), rpm: data.requestsPerMinute },
-        ];
-        return next.slice(-20);
-      });
-    };
+    async function connectSSE() {
+      const headers: Record<string, string> = {};
+      if (apiKey) headers['X-API-Key'] = apiKey;
+
+      try {
+        const res = await fetch(`${apiBaseUrl}/gateway/analytics/live`, { headers });
+        if (!res.ok || !res.body) return;
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (!cancelled) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const data: GatewayAnalytics = JSON.parse(line.slice(6));
+            setAnalytics(data);
+            setRpmHistory(prev => {
+              const next = [
+                ...prev,
+                { time: new Date().toLocaleTimeString(), rpm: data.requestsPerMinute },
+              ];
+              return next.slice(-20);
+            });
+          }
+        }
+
+        reader.cancel();
+      } catch {
+        // connection closed or failed
+      }
+    }
+
+    connectSSE();
 
     return () => {
-      es.close();
+      cancelled = true;
     };
-  }, [apiBaseUrl]);
+  }, [apiBaseUrl, apiKey]);
 
   const getMethodClass = (method: string) => {
     switch (method) {

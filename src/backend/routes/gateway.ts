@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { RateLimiterService } from '../services/RateLimiterService';
 import { AnalyticsService } from '../services/AnalyticsService';
-import type { ApiKeysConfig, GatewayMiddlewareConfig } from '../../types';
+import type { GatewayMiddlewareConfig } from '../../types';
 import crypto from 'crypto';
 
 export interface GatewayRoutesOptions {
@@ -26,7 +26,6 @@ export function createGatewayRoutes(options: GatewayRoutesOptions): Router {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
-    res.setHeader('Access-Control-Allow-Origin', '*');
     res.flushHeaders();
 
     const send = (): void => {
