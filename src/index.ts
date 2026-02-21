@@ -3,12 +3,16 @@ export { createGatewayMiddleware } from './backend/middleware/gateway';
 export type { GatewayInstances } from './backend/middleware/gateway';
 export { createGatewayRoutes } from './backend/routes/gateway';
 export type { GatewayRoutesOptions } from './backend/routes/gateway';
+export { createDeviceAuthRoutes } from './backend/routes/deviceAuth';
+export type { DeviceAuthRoutesOptions } from './backend/routes/deviceAuth';
+export { DeviceRegistryService } from './backend/services/DeviceRegistryService';
 export { RateLimiterService } from './backend/services/RateLimiterService';
 export { AnalyticsService } from './backend/services/AnalyticsService';
 export { createApiKeyAuth } from './backend/middleware/apiKeyAuth';
 export { createIpFilter } from './backend/middleware/ipFilter';
 export { createRateLimiter } from './backend/middleware/rateLimiter';
 export { createRequestLogger } from './backend/middleware/requestLogger';
+export { generateTOTP, validateTOTP, formatKey, parseKey, generateSecret } from './backend/utils/totp';
 
 // Frontend exports
 export { GatewayDashboard } from './frontend/GatewayDashboard';
@@ -28,6 +32,8 @@ export type {
   GatewayAnalytics,
   GatewayConfig,
   GatewayMiddlewareConfig,
+  DeviceEntry,
+  DevicesFile,
 } from './types';
 
 // Config exports

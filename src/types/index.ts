@@ -82,4 +82,24 @@ export interface GatewayMiddlewareConfig {
   rateLimits?: RateLimitConfig;
   ipRules?: IpRules;
   apiKeys?: ApiKeysConfig;
+  /** Path to devices.json file for TOTP device registration. Omit to disable TOTP. */
+  deviceRegistryPath?: string;
+}
+
+/** A registered browser device for TOTP authentication. */
+export interface DeviceEntry {
+  browserId: string;
+  sharedSecret: string;
+  ip: string;
+  userAgent: string;
+  registeredAt: string;
+  expiresAt: string;
+  lastSeen: string;
+  lastIp: string;
+  active: boolean;
+}
+
+/** On-disk format for the devices config file. */
+export interface DevicesFile {
+  devices: DeviceEntry[];
 }
