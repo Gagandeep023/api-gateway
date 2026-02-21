@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { GatewayAnalytics, GatewayConfig, RequestLog } from '../types';
+import type { GatewayAnalytics, GatewayConfig, RequestLog, ApiKey } from '../types';
 
 export interface GatewayDashboardProps {
   apiBaseUrl: string;
@@ -10,6 +10,10 @@ interface LogsResponse {
   logs: RequestLog[];
   limit: number;
   offset: number;
+}
+
+interface CreatedKey extends ApiKey {
+  justCreated?: boolean;
 }
 
 function useGatewayApi<T>(apiBaseUrl: string, path: string): { data: T | null } {
@@ -29,6 +33,56 @@ export function GatewayDashboard({ apiBaseUrl }: GatewayDashboardProps) {
   const { data: config } = useGatewayApi<GatewayConfig>(apiBaseUrl, '/gateway/config');
   const { data: logsData } = useGatewayApi<LogsResponse>(apiBaseUrl, '/gateway/logs?limit=20');
   const eventSourceRef = useRef<EventSource | null>(null);
+  const [keyName, setKeyName] = useState('');
+  const [keyTier, setKeyTier] = useState('free');
+  const [createdKeys, setCreatedKeys] = useState<CreatedKey[]>([]);
+  const [keyError, setKeyError] = useState('');
+  const [keyLoading, setKeyLoading] = useState(false);
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+
+  const handleCreateKey = async () => {
+    if (!keyName.trim()) {
+      setKeyError('Name is required');
+      return;
+    }
+    setKeyError('');
+    setKeyLoading(true);
+    try {
+      const res = await fetch(`${apiBaseUrl}/gateway/keys`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: keyName.trim(), tier: keyTier }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setKeyError(err.error || 'Failed to create key');
+        return;
+      }
+      const newKey: ApiKey = await res.json();
+      setCreatedKeys(prev => [{ ...newKey, justCreated: true }, ...prev]);
+      setKeyName('');
+    } catch {
+      setKeyError('Network error');
+    } finally {
+      setKeyLoading(false);
+    }
+  };
+
+  const handleRevokeKey = async (keyId: string) => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/gateway/keys/${keyId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setCreatedKeys(prev => prev.map(k => k.id === keyId ? { ...k, active: false } : k));
+      }
+    } catch {}
+  };
+
+  const handleCopyKey = (key: string, keyId: string) => {
+    navigator.clipboard.writeText(key).then(() => {
+      setCopiedKeyId(keyId);
+      setTimeout(() => setCopiedKeyId(null), 2000);
+    });
+  };
 
   useEffect(() => {
     const es = new EventSource(`${apiBaseUrl}/gateway/analytics/live`);
@@ -274,6 +328,90 @@ export function GatewayDashboard({ apiBaseUrl }: GatewayDashboardProps) {
           </div>
         </div>
       )}
+
+      {/* API Key Management */}
+      <div className="gw-keys-section">
+        <div className="gw-keys-header">
+          <h2>API Keys</h2>
+          <p>Create keys to authenticate API requests. Each key is tied to a rate limit tier.</p>
+        </div>
+
+        <div className="gw-keys-create">
+          <div className="gw-keys-form">
+            <input
+              type="text"
+              className="gw-keys-input"
+              placeholder="Key name (e.g. My App)"
+              value={keyName}
+              onChange={e => setKeyName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleCreateKey()}
+            />
+            <select
+              className="gw-keys-select"
+              value={keyTier}
+              onChange={e => setKeyTier(e.target.value)}
+            >
+              {config && Object.keys(config.rateLimits.tiers).map(tier => (
+                <option key={tier} value={tier}>{tier}</option>
+              ))}
+            </select>
+            <button
+              className="gw-keys-btn"
+              onClick={handleCreateKey}
+              disabled={keyLoading}
+            >
+              {keyLoading ? 'Creating...' : 'Create Key'}
+            </button>
+          </div>
+          {keyError && <div className="gw-keys-error">{keyError}</div>}
+        </div>
+
+        {createdKeys.length > 0 && (
+          <div className="gw-keys-list">
+            {createdKeys.map(k => (
+              <div key={k.id} className={`gw-key-card ${!k.active ? 'gw-key-revoked' : ''}`}>
+                <div className="gw-key-top">
+                  <span className="gw-key-name">{k.name}</span>
+                  <div className="gw-key-badges">
+                    <span className="gw-key-tier">{k.tier}</span>
+                    <span className={`gw-key-status ${k.active ? 'gw-key-active' : 'gw-key-inactive'}`}>
+                      {k.active ? 'active' : 'revoked'}
+                    </span>
+                  </div>
+                </div>
+                <div className="gw-key-value">
+                  <code>{k.key}</code>
+                  {k.active && (
+                    <button
+                      className="gw-key-copy"
+                      onClick={() => handleCopyKey(k.key, k.id)}
+                    >
+                      {copiedKeyId === k.id ? 'Copied!' : 'Copy'}
+                    </button>
+                  )}
+                </div>
+                <div className="gw-key-bottom">
+                  <span className="gw-key-id">{k.id}</span>
+                  {k.active && (
+                    <button
+                      className="gw-key-revoke"
+                      onClick={() => handleRevokeKey(k.id)}
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </div>
+                {k.justCreated && (
+                  <div className="gw-key-usage">
+                    <span className="gw-key-usage-label">Usage:</span>
+                    <code>curl -H "X-API-Key: {k.key}" {apiBaseUrl}/health</code>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
