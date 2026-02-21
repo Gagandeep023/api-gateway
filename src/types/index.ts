@@ -56,6 +56,7 @@ export interface RequestLog {
   clientId: string;
   ip: string;
   apiKey?: string;
+  authenticated: boolean;
 }
 
 export interface GatewayAnalytics {

@@ -209,6 +209,24 @@
   color: var(--gw-warning);
 }
 
+.gw-auth-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: var(--gw-font-mono);
+}
+
+.gw-auth-yes {
+  background: rgba(100, 255, 218, 0.1);
+  color: var(--gw-accent);
+}
+
+.gw-auth-no {
+  background: rgba(136, 136, 136, 0.1);
+  color: var(--gw-text-muted);
+}
+
 .gw-config-section {
   margin-top: 32px;
   display: grid;

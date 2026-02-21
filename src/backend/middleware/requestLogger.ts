@@ -7,6 +7,7 @@ export function createRequestLogger(analytics: AnalyticsService) {
 
     res.on('finish', () => {
       const responseTime = Date.now() - start;
+      const apiKeyValue = (req as any).apiKeyValue || undefined;
       analytics.addLog({
         timestamp: Date.now(),
         method: req.method,
@@ -15,7 +16,8 @@ export function createRequestLogger(analytics: AnalyticsService) {
         responseTime,
         clientId: (req as any).clientId || req.ip || 'unknown',
         ip: req.ip || req.socket.remoteAddress || 'unknown',
-        apiKey: (req as any).apiKeyValue || undefined,
+        apiKey: apiKeyValue,
+        authenticated: !!apiKeyValue,
       });
     });
 

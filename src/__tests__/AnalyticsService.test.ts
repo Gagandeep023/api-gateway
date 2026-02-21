@@ -11,6 +11,7 @@ function makeLog(overrides: Partial<RequestLog> = {}): RequestLog {
     responseTime: 50,
     clientId: 'key_001',
     ip: '127.0.0.1',
+    authenticated: false,
     ...overrides,
   };
 }

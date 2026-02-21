@@ -4,6 +4,7 @@ import type { GatewayAnalytics, GatewayConfig, RequestLog, ApiKey } from '../typ
 
 export interface GatewayDashboardProps {
   apiBaseUrl: string;
+  apiKey?: string;
 }
 
 interface LogsResponse {
@@ -16,22 +17,24 @@ interface CreatedKey extends ApiKey {
   justCreated?: boolean;
 }
 
-function useGatewayApi<T>(apiBaseUrl: string, path: string): { data: T | null } {
+function useGatewayApi<T>(apiBaseUrl: string, path: string, apiKey?: string): { data: T | null } {
   const [data, setData] = useState<T | null>(null);
   useEffect(() => {
-    fetch(`${apiBaseUrl}${path}`)
+    const headers: Record<string, string> = {};
+    if (apiKey) headers['X-API-Key'] = apiKey;
+    fetch(`${apiBaseUrl}${path}`, { headers })
       .then(r => r.json())
       .then(setData)
       .catch(() => {});
-  }, [apiBaseUrl, path]);
+  }, [apiBaseUrl, path, apiKey]);
   return { data };
 }
 
-export function GatewayDashboard({ apiBaseUrl }: GatewayDashboardProps) {
+export function GatewayDashboard({ apiBaseUrl, apiKey }: GatewayDashboardProps) {
   const [analytics, setAnalytics] = useState<GatewayAnalytics | null>(null);
   const [rpmHistory, setRpmHistory] = useState<{ time: string; rpm: number }[]>([]);
-  const { data: config } = useGatewayApi<GatewayConfig>(apiBaseUrl, '/gateway/config');
-  const { data: logsData } = useGatewayApi<LogsResponse>(apiBaseUrl, '/gateway/logs?limit=20');
+  const { data: config } = useGatewayApi<GatewayConfig>(apiBaseUrl, '/gateway/config', apiKey);
+  const { data: logsData } = useGatewayApi<LogsResponse>(apiBaseUrl, '/gateway/logs?limit=20', apiKey);
   const eventSourceRef = useRef<EventSource | null>(null);
   const [keyName, setKeyName] = useState('');
   const [keyTier, setKeyTier] = useState('free');
@@ -48,9 +51,11 @@ export function GatewayDashboard({ apiBaseUrl }: GatewayDashboardProps) {
     setKeyError('');
     setKeyLoading(true);
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (apiKey) headers['X-API-Key'] = apiKey;
       const res = await fetch(`${apiBaseUrl}/gateway/keys`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ name: keyName.trim(), tier: keyTier }),
       });
       if (!res.ok) {
@@ -70,7 +75,9 @@ export function GatewayDashboard({ apiBaseUrl }: GatewayDashboardProps) {
 
   const handleRevokeKey = async (keyId: string) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/gateway/keys/${keyId}`, { method: 'DELETE' });
+      const headers: Record<string, string> = {};
+      if (apiKey) headers['X-API-Key'] = apiKey;
+      const res = await fetch(`${apiBaseUrl}/gateway/keys/${keyId}`, { method: 'DELETE', headers });
       if (res.ok) {
         setCreatedKeys(prev => prev.map(k => k.id === keyId ? { ...k, active: false } : k));
       }
@@ -240,6 +247,7 @@ export function GatewayDashboard({ apiBaseUrl }: GatewayDashboardProps) {
               <th>Status</th>
               <th>Duration</th>
               <th>IP</th>
+              <th>Auth</th>
             </tr>
           </thead>
           <tbody>
@@ -255,11 +263,16 @@ export function GatewayDashboard({ apiBaseUrl }: GatewayDashboardProps) {
                 <td className={getStatusClass(log.statusCode)}>{log.statusCode}</td>
                 <td>{log.responseTime}ms</td>
                 <td>{log.ip}</td>
+                <td>
+                  <span className={`gw-auth-badge ${log.authenticated ? 'gw-auth-yes' : 'gw-auth-no'}`}>
+                    {log.authenticated ? 'key' : 'none'}
+                  </span>
+                </td>
               </tr>
             ))}
             {(!logsData?.logs || logsData.logs.length === 0) && (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', color: 'var(--gw-text-muted, #666)' }}>
+                <td colSpan={7} style={{ textAlign: 'center', color: 'var(--gw-text-muted, #666)' }}>
                   No requests logged yet. Make some API calls to see data here.
                 </td>
               </tr>
