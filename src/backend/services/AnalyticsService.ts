@@ -1,4 +1,5 @@
-import type { RequestLog, GatewayAnalytics } from '../../types';
+import type { RequestLog, GatewayAnalytics, LogConfig } from '../../types';
+import { FileLogWriter } from './FileLogWriter';
 
 const MAX_LOG_SIZE = 10000;
 const ACTIVE_WINDOW_MS = 300000; // 5 minutes
@@ -7,6 +8,13 @@ export class AnalyticsService {
   private logs: RequestLog[] = [];
   private head = 0;
   private count = 0;
+  private fileLogWriter: FileLogWriter | null = null;
+
+  constructor(logConfig?: LogConfig) {
+    if (logConfig) {
+      this.fileLogWriter = new FileLogWriter(logConfig);
+    }
+  }
 
   addLog(log: RequestLog): void {
     if (this.count < MAX_LOG_SIZE) {
@@ -16,6 +24,12 @@ export class AnalyticsService {
       this.logs[this.head] = log;
       this.head = (this.head + 1) % MAX_LOG_SIZE;
     }
+    this.fileLogWriter?.write(log);
+  }
+
+  destroy(): void {
+    this.fileLogWriter?.destroy();
+    this.fileLogWriter = null;
   }
 
   getRecentLogs(limit = 20, offset = 0): RequestLog[] {

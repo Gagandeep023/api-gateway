@@ -7,7 +7,7 @@ import crypto from 'crypto';
 export interface GatewayRoutesOptions {
   rateLimiterService: RateLimiterService;
   analyticsService: AnalyticsService;
-  config: Required<GatewayMiddlewareConfig>;
+  config: Required<Omit<GatewayMiddlewareConfig, 'logConfig'>> & Pick<GatewayMiddlewareConfig, 'logConfig'>;
 }
 
 export function createGatewayRoutes(options: GatewayRoutesOptions): Router {

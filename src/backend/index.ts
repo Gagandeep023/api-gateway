@@ -7,6 +7,7 @@ export type { DeviceAuthRoutesOptions } from './routes/deviceAuth';
 export { DeviceRegistryService } from './services/DeviceRegistryService';
 export { RateLimiterService } from './services/RateLimiterService';
 export { AnalyticsService } from './services/AnalyticsService';
+export { FileLogWriter } from './services/FileLogWriter';
 export { createApiKeyAuth } from './middleware/apiKeyAuth';
 export { createIpFilter } from './middleware/ipFilter';
 export { createRateLimiter } from './middleware/rateLimiter';

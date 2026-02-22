@@ -8,6 +8,7 @@ export type { DeviceAuthRoutesOptions } from './backend/routes/deviceAuth';
 export { DeviceRegistryService } from './backend/services/DeviceRegistryService';
 export { RateLimiterService } from './backend/services/RateLimiterService';
 export { AnalyticsService } from './backend/services/AnalyticsService';
+export { FileLogWriter } from './backend/services/FileLogWriter';
 export { createApiKeyAuth } from './backend/middleware/apiKeyAuth';
 export { createIpFilter } from './backend/middleware/ipFilter';
 export { createRateLimiter } from './backend/middleware/rateLimiter';
@@ -32,6 +33,8 @@ export type {
   GatewayAnalytics,
   GatewayConfig,
   GatewayMiddlewareConfig,
+  LogConfig,
+  FileLogEntry,
   DeviceEntry,
   DevicesFile,
 } from './types';
@@ -41,4 +44,5 @@ export {
   DEFAULT_RATE_LIMIT_CONFIG,
   DEFAULT_IP_RULES,
   DEFAULT_API_KEYS,
+  DEFAULT_LOG_MAX_LINES,
 } from './config/defaults';

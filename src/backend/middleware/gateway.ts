@@ -14,19 +14,20 @@ export interface GatewayInstances {
   analyticsService: AnalyticsService;
   deviceRegistry?: DeviceRegistryService;
   middleware: Router;
-  config: Required<GatewayMiddlewareConfig>;
+  config: Required<Omit<GatewayMiddlewareConfig, 'logConfig'>> & Pick<GatewayMiddlewareConfig, 'logConfig'>;
 }
 
 export function createGatewayMiddleware(userConfig?: GatewayMiddlewareConfig): GatewayInstances {
-  const config: Required<GatewayMiddlewareConfig> = {
+  const config: Required<Omit<GatewayMiddlewareConfig, 'logConfig'>> & Pick<GatewayMiddlewareConfig, 'logConfig'> = {
     rateLimits: userConfig?.rateLimits ?? DEFAULT_RATE_LIMIT_CONFIG,
     ipRules: userConfig?.ipRules ?? DEFAULT_IP_RULES,
     apiKeys: userConfig?.apiKeys ?? DEFAULT_API_KEYS,
     deviceRegistryPath: userConfig?.deviceRegistryPath ?? '',
+    logConfig: userConfig?.logConfig,
   };
 
   const rateLimiterService = new RateLimiterService(config.rateLimits);
-  const analyticsService = new AnalyticsService();
+  const analyticsService = new AnalyticsService(userConfig?.logConfig);
 
   let deviceRegistry: DeviceRegistryService | undefined;
   if (config.deviceRegistryPath) {

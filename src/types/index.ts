@@ -77,6 +77,31 @@ export interface GatewayConfig {
   activeKeyUses: number;
 }
 
+/** Configuration for file-based log persistence. */
+export interface LogConfig {
+  /** Directory to write log files into. Created if missing. */
+  logDir: string;
+  /** Application name used as prefix in log file names. */
+  appName: string;
+  /** Maximum lines per log file before rotating. Defaults to 10000. */
+  maxLinesPerFile?: number;
+}
+
+/** A single log entry written to disk in JSONL format, compatible with @gagandeep023/log-analyzer. */
+export interface FileLogEntry {
+  timestamp: string;
+  level: 'info' | 'warn' | 'error' | 'fatal';
+  service: string;
+  method: string;
+  path: string;
+  statusCode: number;
+  responseTime: number;
+  requestId: string;
+  clientId: string;
+  ip: string;
+  authenticated: boolean;
+}
+
 /** Configuration for creating the gateway middleware programmatically. */
 export interface GatewayMiddlewareConfig {
   rateLimits?: RateLimitConfig;
@@ -84,6 +109,8 @@ export interface GatewayMiddlewareConfig {
   apiKeys?: ApiKeysConfig;
   /** Path to devices.json file for TOTP device registration. Omit to disable TOTP. */
   deviceRegistryPath?: string;
+  /** File-based log persistence config. Omit to disable file logging. */
+  logConfig?: LogConfig;
 }
 
 /** A registered browser device for TOTP authentication. */

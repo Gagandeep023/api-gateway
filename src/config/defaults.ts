@@ -1,5 +1,7 @@
 import type { RateLimitConfig, IpRules, ApiKeysConfig } from '../types';
 
+export const DEFAULT_LOG_MAX_LINES = 10000;
+
 export const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
   tiers: {
     free: { algorithm: 'tokenBucket', maxRequests: 100, windowMs: 60000, refillRate: 10 },
