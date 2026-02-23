@@ -37,6 +37,8 @@ export type {
   FileLogEntry,
   DeviceEntry,
   DevicesFile,
+  TOTPValidationResult,
+  TOTPValidator,
 } from './types';
 
 // Config exports

@@ -102,6 +102,15 @@ export interface FileLogEntry {
   authenticated: boolean;
 }
 
+/** Result returned by a custom TOTP validator. */
+export interface TOTPValidationResult {
+  sessionId: string;
+  userId?: string | null;
+}
+
+/** Custom TOTP validator function. Return result on success, null on failure. */
+export type TOTPValidator = (token: string) => TOTPValidationResult | null;
+
 /** Configuration for creating the gateway middleware programmatically. */
 export interface GatewayMiddlewareConfig {
   rateLimits?: RateLimitConfig;
@@ -109,6 +118,12 @@ export interface GatewayMiddlewareConfig {
   apiKeys?: ApiKeysConfig;
   /** Path to devices.json file for TOTP device registration. Omit to disable TOTP. */
   deviceRegistryPath?: string;
+  /**
+   * Custom TOTP validator function. When provided, TOTP tokens (totp_*) are
+   * validated using this function instead of the built-in DeviceRegistryService.
+   * Takes precedence over deviceRegistryPath for TOTP validation.
+   */
+  validateTOTP?: TOTPValidator;
   /** File-based log persistence config. Omit to disable file logging. */
   logConfig?: LogConfig;
 }

@@ -4,10 +4,13 @@ import { AnalyticsService } from '../services/AnalyticsService';
 import type { GatewayMiddlewareConfig } from '../../types';
 import crypto from 'crypto';
 
+type OptionalConfigKeys = 'logConfig' | 'validateTOTP';
+type ResolvedConfig = Required<Omit<GatewayMiddlewareConfig, OptionalConfigKeys>> & Pick<GatewayMiddlewareConfig, OptionalConfigKeys>;
+
 export interface GatewayRoutesOptions {
   rateLimiterService: RateLimiterService;
   analyticsService: AnalyticsService;
-  config: Required<Omit<GatewayMiddlewareConfig, 'logConfig'>> & Pick<GatewayMiddlewareConfig, 'logConfig'>;
+  config: ResolvedConfig;
 }
 
 export function createGatewayRoutes(options: GatewayRoutesOptions): Router {
