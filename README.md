@@ -24,7 +24,10 @@ Type-safe Express API gateway with IP-based rate limiting, analytics, and a real
 
 ```typescript
 import express from 'express';
-import { createGatewayMiddleware, createGatewayRoutes } from '@gagandeep023/api-gateway/backend';
+import {
+  createGatewayMiddleware,
+  createGatewayRoutes,
+} from '@gagandeep023/api-gateway/backend';
 
 const app = express();
 app.use(express.json());
@@ -64,13 +67,23 @@ function App() {
 ## Custom Configuration
 
 ```typescript
-import { createGatewayMiddleware } from '@gagandeep023/api-gateway/backend';
+import { createGatewayMiddleware }
+  from '@gagandeep023/api-gateway/backend';
 
 const gateway = createGatewayMiddleware({
   rateLimits: {
     tiers: {
-      free: { algorithm: 'tokenBucket', maxRequests: 100, windowMs: 60000, refillRate: 10 },
-      pro: { algorithm: 'slidingWindow', maxRequests: 1000, windowMs: 60000 },
+      free: {
+        algorithm: 'tokenBucket',
+        maxRequests: 100,
+        windowMs: 60000,
+        refillRate: 10,
+      },
+      pro: {
+        algorithm: 'slidingWindow',
+        maxRequests: 1000,
+        windowMs: 60000,
+      },
       unlimited: { algorithm: 'none' },
     },
     defaultTier: 'free',
